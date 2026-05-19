@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 env:
-  AWS_REGION: ap-south-1          # Mumbai — closest to you
+  AWS_REGION: ap-northeast-1          # Mumbai — closest to you
   ECR_REPOSITORY: rviz2-novnc
   EC2_HOST: ${{ secrets.EC2_HOST }}
 

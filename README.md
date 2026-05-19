@@ -30,7 +30,7 @@ docker compose exec rviz2 bash
 ```bash
 aws ecr create-repository \
   --repository-name rviz2-novnc \
-  --region ap-south-1
+  --region ap-northeast-1
 ```
 
 ### 2. Launch EC2 instance
@@ -54,7 +54,7 @@ sudo usermod -aG docker ubuntu
 | `AWS_SECRET_ACCESS_KEY` | IAM user secret |
 | `EC2_HOST` | EC2 public IP |
 | `EC2_SSH_KEY` | EC2 private key (PEM contents) |
-| `ECR_REGISTRY` | `<account-id>.dkr.ecr.ap-south-1.amazonaws.com` |
+| `ECR_REGISTRY` | `<account-id>.dkr.ecr.ap-northeast-1.amazonaws.com` |
 
 ### 5. Push to main — pipeline does the rest
 ```bash

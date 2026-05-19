@@ -9,7 +9,7 @@ on:
 env:
   AWS_REGION: ap-northeast-1          # Mumbai — closest to you
   ECR_REPOSITORY: rviz2-novnc
-  EC2_HOST: ${{ secrets.EC2_HOST }}
+  EC2_HOST: 57.180.7.217
 
 jobs:
   build-and-push:

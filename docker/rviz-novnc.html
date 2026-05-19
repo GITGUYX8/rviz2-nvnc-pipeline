@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>RViz2</title>
+    <style>
+      html, body, #screen {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        overflow: hidden;
+        background: #111;
+      }
+      #screen canvas { width: 100%; height: 100%; }
+    </style>
+  </head>
+  <body>
+    <div id="screen"></div>
+    <script type="module">
+      import RFB from './core/rfb.js';
+      const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+      const rfb = new RFB(
+        document.getElementById('screen'),
+        `${protocol}://${window.location.host}/websockify`
+      );
+      rfb.scaleViewport = true;
+      rfb.resizeSession = false;
+      rfb.clipViewport = false;
+      rfb.focusOnClick = true;
+      rfb.showDotCursor = true;
+    </script>
+  </body>
+</html>

@@ -1,0 +1,12 @@
+services:
+  rviz2:
+    build:
+      context: docker
+      args:
+        - user_id=1000
+    environment:
+      - TERM=xterm-256color
+    ports:
+      - "8081:8080"   # ttyd — browser terminal (run rviz2-wrapper here)
+      - "6090:6090"   # noVNC — open http://localhost:6090
+      - "5901:5901"   # VNC direct (optional)

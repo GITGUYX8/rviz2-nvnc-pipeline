@@ -1,0 +1,86 @@
+name: Build and deploy RViz2 to AWS
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  AWS_REGION: ap-south-1          # Mumbai — closest to you
+  ECR_REPOSITORY: rviz2-novnc
+  EC2_HOST: ${{ secrets.EC2_HOST }}
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Build Docker image
+        run: |
+          docker build \
+            -t ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }} \
+            -t ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:latest \
+            ./docker
+
+      - name: Push to ECR
+        run: |
+          docker push ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
+          docker push ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:latest
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to ECR on EC2 and redeploy
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            # Login to ECR
+            aws ecr get-login-password --region ap-south-1 | \
+              docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}
+
+            # Pull latest image
+            docker pull ${{ secrets.ECR_REGISTRY }}/rviz2-novnc:latest
+
+            # Stop old container and start new one
+            docker stop rviz2 || true
+            docker rm rviz2 || true
+            docker run -d \
+              --name rviz2 \
+              --restart unless-stopped \
+              -p 8080:8080 \
+              -p 6090:6090 \
+              ${{ secrets.ECR_REGISTRY }}/rviz2-novnc:latest
+
+            # Smoke test — check both ports
+            sleep 15
+            curl -sf http://localhost:6090 || exit 1
+            curl -sf http://localhost:8080 || exit 1
+            echo "Deployment successful"
